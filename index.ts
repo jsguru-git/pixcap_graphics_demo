@@ -20,6 +20,19 @@ function windowOnClick(event: any) {
 
 closeButton?.addEventListener("click", toggleModal);
 window.addEventListener("click", windowOnClick);
+var meshContent = {
+	Plane: 'This is extremely nice BOX! <br/> <p style = "color:green">No problems with CSS styling.</p>',
+	IcoSphere: 'This SPHERE is really wonderful! <br/><h3>HTML tags allowed :)</h3>',
+	Cylinder: `<div class="modal-title">Customize Cylinder</div>
+	<div class="modal-body">
+		<label for="diameter">Diameter: </label><br/>
+		<input type="range" id="diameter" value="1" min="0.1" max="2.0" step="0.1" oninput="diameterVal.value = this.value" />
+		<output id="diameterVal">1</output><br/>
+		<label for="height">Height: </label><br/>
+		<input type="range" id="height" value="1" min="0.1" max="2.0" step="0.1" oninput="heightVal.value = this.value" />
+		<output id="heightVal">1</output>
+	</div>`
+}
 
 const engine = new Engine(canvas, true, {});
 const scene = new Scene(engine);
@@ -50,8 +63,23 @@ function prepareScene() {
 			console.log(currentMesh?.id);
 			toggleModal();
 			var modalContent = document.getElementById("modal-iframe");
-			if (modalContent)
-				modalContent.innerHTML = currentMesh?.id || '';
+			if (modalContent) {
+				switch(currentMesh?.id) {
+					case "Plane":
+						modalContent.innerHTML = meshContent.Plane;
+						return;
+					case "IcoSphere":
+						modalContent.innerHTML = meshContent.IcoSphere;
+						return;
+					case "Cylinder":
+						modalContent.innerHTML = meshContent.Cylinder;
+						return;
+					default:
+						return;
+				}
+				
+			}
+				
 		}
 	}
 }
