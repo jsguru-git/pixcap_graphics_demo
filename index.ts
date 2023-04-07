@@ -1,8 +1,25 @@
 import { Engine, Scene, ArcRotateCamera, HemisphericLight, Vector3, MeshBuilder, Quaternion  } from 'babylonjs';
+import * as GUI from 'babylonjs-gui';
 import 'babylonjs-loaders';
 
 const canvas = document.getElementById("canvas");
 if (!(canvas instanceof HTMLCanvasElement)) throw new Error("Couldn't find a canvas. Aborting the demo")
+
+var modal = document.querySelector(".modal");
+var closeButton = document.querySelector(".close-button");
+
+function toggleModal() {
+	modal?.classList.toggle("show-modal");
+}
+
+function windowOnClick(event: any) {
+	if (event.target === modal) {
+		toggleModal();
+	}
+}
+
+closeButton?.addEventListener("click", toggleModal);
+window.addEventListener("click", windowOnClick);
 
 const engine = new Engine(canvas, true, {});
 const scene = new Scene(engine);
@@ -31,6 +48,10 @@ function prepareScene() {
 		if (pickResult?.hit) {
 			var currentMesh = pickResult.pickedMesh;
 			console.log(currentMesh?.id);
+			toggleModal();
+			var modalContent = document.getElementById("modal-iframe");
+			if (modalContent)
+				modalContent.innerHTML = currentMesh?.id || '';
 		}
 	}
 }
