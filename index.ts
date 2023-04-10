@@ -23,11 +23,26 @@ window.addEventListener("click", windowOnClick);
 const engine = new Engine(canvas, true, {});
 const scene = new Scene(engine);
 var currentMesh: Nullable<AbstractMesh>;
+var cubeWidth = 1;
+var cubeHeight = 1;
+var cubeDepth = 1;
 var cylinderHeight = 2;
 var cylinderDiameter = 1;
 
 var meshContent = {
-	Plane: 'This is extremely nice BOX! <br/> <p style = "color:green">No problems with CSS styling.</p>',
+	Plane: `
+	<div class="modal-title">Customize Cube</div>
+	<div class="modal-body">
+		<label for="width">Width: </label><br/>
+		<input type="range" id="width" value="%1" min="0.1" max="2.0" step="0.1" oninput="widthVal.value = this.value" />
+		<output id="widthVal">%2</output><br/>
+		<label for="height">Height: </label><br/>
+		<input type="range" id="height" value="%3" min="0.1" max="2.0" step="0.1" oninput="heightVal.value = this.value" />
+		<output id="heightVal">%4</output><br/>
+		<label for="depth">Depth: </label><br/>
+		<input type="range" id="depth" value="%5" min="0.1" max="2.0" step="0.1" oninput="depthVal.value = this.value" />
+		<output id="depthVal">%6</output>
+	</div>`,
 	IcoSphere: 'This SPHERE is really wonderful! <br/><h3>HTML tags allowed :)</h3>',
 	Cylinder: `
 	<div class="modal-title">Customize Cylinder</div>
@@ -78,7 +93,7 @@ function prepareScene() {
 			if (modalContent) {
 				switch(currentMesh?.id) {
 					case "Plane":
-						modalContent.innerHTML = meshContent.Plane;
+						modalContent.innerHTML = stringJoin(meshContent.Plane, [cubeWidth, cubeWidth, cubeHeight, cubeHeight, cubeDepth, cubeDepth]);
 						return;
 					case "IcoSphere":
 						modalContent.innerHTML = meshContent.IcoSphere;
@@ -100,7 +115,12 @@ prepareScene();
 
 engine.runRenderLoop(() => {
 	if (currentMesh?.id === "Plane") {
-		
+		cubeWidth = Number((document.getElementById("width") as HTMLInputElement)?.value) || cubeWidth;
+		cubeHeight = Number((document.getElementById("height") as HTMLInputElement)?.value) || cubeHeight;
+		cubeDepth = Number((document.getElementById("depth") as HTMLInputElement)?.value) || cubeDepth;
+		currentMesh.scaling.y = cubeHeight / 1;
+		currentMesh.scaling.x = cubeWidth / 1;
+		currentMesh.scaling.z = cubeDepth / 1;
 	} else if (currentMesh?.id === "IcoSphere") {
 
 	} else if (currentMesh?.id === "Cylinder") {
