@@ -1,14 +1,29 @@
-import { Engine, Scene, ArcRotateCamera, HemisphericLight, Vector3, MeshBuilder, Quaternion, AbstractMesh, Nullable  } from 'babylonjs';
+import { Engine, Scene, ArcRotateCamera, HemisphericLight, Vector3, MeshBuilder, Quaternion, AbstractMesh, Nullable, Mesh  } from 'babylonjs';
 import 'babylonjs-loaders';
 
 const canvas = document.getElementById("canvas");
 if (!(canvas instanceof HTMLCanvasElement)) throw new Error("Couldn't find a canvas. Aborting the demo")
 
+const engine = new Engine(canvas, true, {});
+const scene = new Scene(engine);
+var currentMesh: Nullable<AbstractMesh>;
+var cubeWidth = 1;
+var cubeHeight = 1;
+var cubeDepth = 1;
+var cylinderHeight = 2;
+var cylinderDiameter = 1;
+var sphereRadius = 1;
+var sphereSubDivisions = 4;
+var newIcosphere: Mesh;
+
 var modal = document.querySelector(".modal");
 var closeButton = document.querySelector(".close-button");
+var isModal = false;
 
 function toggleModal() {
 	modal?.classList.toggle("show-modal");
+	isModal = !isModal;
+	console.log(isModal);
 }
 
 function windowOnClick(event: any) {
@@ -19,15 +34,6 @@ function windowOnClick(event: any) {
 
 closeButton?.addEventListener("click", toggleModal);
 window.addEventListener("click", windowOnClick);
-
-const engine = new Engine(canvas, true, {});
-const scene = new Scene(engine);
-var currentMesh: Nullable<AbstractMesh>;
-var cubeWidth = 1;
-var cubeHeight = 1;
-var cubeDepth = 1;
-var cylinderHeight = 2;
-var cylinderDiameter = 1;
 
 var meshContent = {
 	Plane: `
@@ -43,7 +49,16 @@ var meshContent = {
 		<input type="range" id="depth" value="%5" min="0.1" max="2.0" step="0.1" oninput="depthVal.value = this.value" />
 		<output id="depthVal">%6</output>
 	</div>`,
-	IcoSphere: 'This SPHERE is really wonderful! <br/><h3>HTML tags allowed :)</h3>',
+	IcoSphere: `
+	<div class="modal-title">Customize Sphere</div>
+	<div class="modal-body">
+		<label for="radius">Radius: </label><br/>
+		<input type="range" id="radius" value="%1" min="0.1" max="2.0" step="0.1" oninput="radiusVal.value = this.value" />
+		<output id="radiusVal">%2</output><br/>
+		<label for="subDivisions">SubDivisions: </label><br/>
+		<input type="range" id="subDivisions" value="%3" min="1" max="10" step="1" oninput="subDivisionsVal.value = this.value" />
+		<output id="subDivisionsVal">%4</output>
+	</div>`,
 	Cylinder: `
 	<div class="modal-title">Customize Cylinder</div>
 	<div class="modal-body">
@@ -64,7 +79,6 @@ function stringJoin(s: string, r: Array<any>) {
 }
 
 function prepareScene() {
-
 	// Camera
 	const camera = new ArcRotateCamera("camera", Math.PI / 2, Math.PI / 2.5, 4, new Vector3(0, 0, 0), scene);
 	camera.attachControl(canvas, true);
@@ -89,6 +103,7 @@ function prepareScene() {
 			currentMesh = pickResult.pickedMesh;
 			console.log(currentMesh?.id);
 			toggleModal();
+			isModal = true;
 			var modalContent = document.getElementById("modal-iframe");
 			if (modalContent) {
 				switch(currentMesh?.id) {
@@ -96,7 +111,7 @@ function prepareScene() {
 						modalContent.innerHTML = stringJoin(meshContent.Plane, [cubeWidth, cubeWidth, cubeHeight, cubeHeight, cubeDepth, cubeDepth]);
 						return;
 					case "IcoSphere":
-						modalContent.innerHTML = meshContent.IcoSphere;
+						modalContent.innerHTML = stringJoin(meshContent.IcoSphere, [sphereRadius, sphereRadius, sphereSubDivisions, sphereSubDivisions]);
 						return;
 					case "Cylinder":
 						modalContent.innerHTML = stringJoin(meshContent.Cylinder, [cylinderHeight, cylinderHeight, cylinderDiameter, cylinderDiameter]);
@@ -104,9 +119,7 @@ function prepareScene() {
 					default:
 						return;
 				}
-				
 			}
-				
 		}
 	}
 }
@@ -114,21 +127,27 @@ function prepareScene() {
 prepareScene();
 
 engine.runRenderLoop(() => {
-	if (currentMesh?.id === "Plane") {
-		cubeWidth = Number((document.getElementById("width") as HTMLInputElement)?.value) || cubeWidth;
-		cubeHeight = Number((document.getElementById("height") as HTMLInputElement)?.value) || cubeHeight;
-		cubeDepth = Number((document.getElementById("depth") as HTMLInputElement)?.value) || cubeDepth;
-		currentMesh.scaling.y = cubeHeight / 1;
-		currentMesh.scaling.x = cubeWidth / 1;
-		currentMesh.scaling.z = cubeDepth / 1;
-	} else if (currentMesh?.id === "IcoSphere") {
-
-	} else if (currentMesh?.id === "Cylinder") {
-		cylinderHeight = Number((document.getElementById("height") as HTMLInputElement)?.value) || cylinderHeight;
-		cylinderDiameter = Number((document.getElementById("diameter") as HTMLInputElement)?.value) || cylinderDiameter;
-		currentMesh.scaling.y = cylinderHeight / 2;
-		currentMesh.scaling.x = cylinderDiameter / 1;
-		currentMesh.scaling.z = cylinderDiameter / 1;
+	if (isModal) {
+		if (currentMesh?.id === "Plane") {
+			cubeWidth = Number((document.getElementById("width") as HTMLInputElement)?.value) || cubeWidth;
+			cubeHeight = Number((document.getElementById("height") as HTMLInputElement)?.value) || cubeHeight;
+			cubeDepth = Number((document.getElementById("depth") as HTMLInputElement)?.value) || cubeDepth;
+			currentMesh.scaling.y = cubeHeight / 1;
+			currentMesh.scaling.x = cubeWidth / 1;
+			currentMesh.scaling.z = cubeDepth / 1;
+		} else if (currentMesh?.id === "IcoSphere") {
+			sphereRadius = Number((document.getElementById("radius") as HTMLInputElement)?.value) || sphereRadius;
+			sphereSubDivisions = Number((document.getElementById("subDivisions") as HTMLInputElement)?.value) || sphereSubDivisions;
+			scene.removeMesh(newIcosphere || currentMesh);
+			newIcosphere = MeshBuilder.CreateIcoSphere("IcoSphere", {radius: sphereRadius, subdivisions: sphereSubDivisions}, scene);
+			newIcosphere.position.set(-2, 0, 0);
+		} else if (currentMesh?.id === "Cylinder") {
+			cylinderHeight = Number((document.getElementById("height") as HTMLInputElement)?.value) || cylinderHeight;
+			cylinderDiameter = Number((document.getElementById("diameter") as HTMLInputElement)?.value) || cylinderDiameter;
+			currentMesh.scaling.y = cylinderHeight / 2;
+			currentMesh.scaling.x = cylinderDiameter / 1;
+			currentMesh.scaling.z = cylinderDiameter / 1;
+		}
 	}
 
 	scene.render();
