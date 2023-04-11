@@ -192,7 +192,7 @@ engine.runRenderLoop(() => {
 			if (cylinder)
 				scene.removeMesh(cylinder);
 
-			cylinder = MeshBuilder.CreateCylinder("Cylinder", {}, scene);
+			cylinder = MeshBuilder.CreateCylinder("Cylinder", {height: cylinderHeight, diameter: cylinderDiameter}, scene);
 			cylinder.position.set(2, 0, 0);
 			cylinder.parent = transformNode;
 			currentMesh = cylinder;
