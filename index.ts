@@ -22,6 +22,11 @@ var cylinderHeight = 2;
 var cylinderDiameter = 1;
 var sphereRadius = 1;
 var sphereSubDivisions = 4;
+var amplitude = 10;
+var duration = 2000;
+var prevAmplitude = amplitude;
+var prevDuration = duration;
+
 
 var modal = document.querySelector(".modal");
 var closeButton = document.querySelector(".close-button");
@@ -54,8 +59,7 @@ var meshContent = {
 		<output id="heightVal">%4</output><br/>
 		<label for="depth">Depth: </label><br/>
 		<input type="range" id="depth" value="%5" min="0.1" max="2.0" step="0.1" oninput="depthVal.value = this.value" />
-		<output id="depthVal">%6</output>
-	</div>`,
+		<output id="depthVal">%6</output><br/>`,
 	IcoSphere: `
 	<div class="modal-title">Customize Sphere</div>
 	<div class="modal-body">
@@ -64,8 +68,7 @@ var meshContent = {
 		<output id="radiusVal">%2</output><br/>
 		<label for="subDivisions">SubDivisions: </label><br/>
 		<input type="range" id="subDivisions" value="%3" min="1" max="10" step="1" oninput="subDivisionsVal.value = this.value" />
-		<output id="subDivisionsVal">%4</output>
-	</div>`,
+		<output id="subDivisionsVal">%4</output><br/>`,
 	Cylinder: `
 	<div class="modal-title">Customize Cylinder</div>
 	<div class="modal-body">
@@ -74,8 +77,15 @@ var meshContent = {
 		<output id="diameterVal">%4</output><br/>
 		<label for="height">Height: </label><br/>
 		<input type="range" id="height" value="%1" min="0.1" max="2.0" step="0.1" oninput="heightVal.value = this.value" />
-		<output id="heightVal">%2</output>
-	</div>`
+		<output id="heightVal">%2</output><br/>`,
+	AnimationController: `
+		<label for="amplitude">Bouncing Amplitude: </label><br/>
+		<input type="range" id="amplitude" value="%1" min="1" max="20" step="1" oninput="amplitudeVal.value = this.value" />
+		<output id="amplitudeVal">%2</output><br/>
+		<label for="duration">Bouncing Duration(ms): </label><br/>
+		<input type="range" id="duration" value="%3" min="1000" max="4000" step="100" oninput="durationVal.value = this.value" />
+		<output id="durationVal">%4</output><br/>
+		</div>`
 }
 
 function stringJoin(s: string, r: Array<any>) {
@@ -117,7 +127,7 @@ function prepareScene() {
 	cylinder = MeshBuilder.CreateCylinder("Cylinder", {}, scene);
 	cylinder.position.set(2, 0, 0);
 
-	applyBouncing(transformNode, 10, 2000);
+	applyBouncing(transformNode, amplitude, duration);
 
 	scene.onPointerPick = function () {
 		// We try to pick an object
@@ -133,13 +143,13 @@ function prepareScene() {
 			if (modalContent) {
 				switch(currentMeshName) {
 					case "Plane":
-						modalContent.innerHTML = stringJoin(meshContent.Plane, [cubeWidth, cubeWidth, cubeHeight, cubeHeight, cubeDepth, cubeDepth]);
+						modalContent.innerHTML = stringJoin(meshContent.Plane, [cubeWidth, cubeWidth, cubeHeight, cubeHeight, cubeDepth, cubeDepth]) + stringJoin(meshContent.AnimationController, [amplitude, amplitude, duration, duration]);
 						break;
 					case "IcoSphere":
-						modalContent.innerHTML = stringJoin(meshContent.IcoSphere, [sphereRadius, sphereRadius, sphereSubDivisions, sphereSubDivisions]);
+						modalContent.innerHTML = stringJoin(meshContent.IcoSphere, [sphereRadius, sphereRadius, sphereSubDivisions, sphereSubDivisions]) + stringJoin(meshContent.AnimationController, [amplitude, amplitude, duration, duration]);
 						break;
 					case "Cylinder":
-						modalContent.innerHTML = stringJoin(meshContent.Cylinder, [cylinderHeight, cylinderHeight, cylinderDiameter, cylinderDiameter]);
+						modalContent.innerHTML = stringJoin(meshContent.Cylinder, [cylinderHeight, cylinderHeight, cylinderDiameter, cylinderDiameter]) + stringJoin(meshContent.AnimationController, [amplitude, amplitude, duration, duration]);
 						break;
 					default:
 						break;
@@ -186,6 +196,14 @@ engine.runRenderLoop(() => {
 			cylinder.position.set(2, 0, 0);
 			cylinder.parent = transformNode;
 			currentMesh = cylinder;
+		}
+
+		amplitude = Number((document.getElementById("amplitude") as HTMLInputElement)?.value) || amplitude;
+		duration = Number((document.getElementById("duration") as HTMLInputElement)?.value) || duration;
+		if (prevAmplitude != amplitude || prevDuration != duration) {
+			applyBouncing(transformNode, amplitude, duration);
+			prevAmplitude = amplitude;
+			prevDuration = duration;
 		}
 	}
 

@@ -26,21 +26,22 @@
 				background-color: rgba(0, 0, 0, 0.5);
 				opacity: 0;
 				visibility: hidden;
-				transform: scaleX(1.1) scaleY(1.1);
+				transform: scaleX(2) scaleY(1);
 				transition: visibility 0s linear 0.25s, opacity 0.25s 0s, transform 0.25s;
 				font-family: sans-serif;
 			}
 
 			.modal-content {
 				position: absolute;
-				top: 50%;
-				left: 50%;
-				transform: translate(-50%, -50%);
+				/* top: 50%; */
+				/* left: 50%; */
+				right: 0;
+				/* transform: translate(-50%, -50%); */
 				background-color: white;
 				padding: 1rem 1.5rem;
-				width: 40%;
-				height: 50%;
-				border-radius: 0.5rem;
+				width: 250px;
+				height: 100%;
+				/* border-radius: 0.5rem; */
 				z-index: 99000 !important;
 			}
 
