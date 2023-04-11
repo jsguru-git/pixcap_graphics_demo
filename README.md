@@ -28,3 +28,6 @@ where
 The result of this animation should roughly match the following video:(https://www.youtube.com/watch?v=a7oSbf8NiLw)
 
 Please implement this on a mesh in the scene e.g. a sphere, so that the animation can be viewed
+
+### Result
+ <img src="screens/screens.gif">
