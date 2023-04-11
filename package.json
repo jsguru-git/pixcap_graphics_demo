@@ -14,6 +14,8 @@
 		"webpack-dev-server": "^3.11.2"
 	},
 	"dependencies": {
+		"@tweenjs/tween.js": "^19.0.0",
+		"@types/tweenjs": "^1.0.4",
 		"babylonjs": "^5.0.0-alpha.37",
 		"babylonjs-loaders": "^5.0.0-alpha.37"
 	}

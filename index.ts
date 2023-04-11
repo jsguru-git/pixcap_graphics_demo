@@ -1,12 +1,20 @@
-import { Engine, Scene, ArcRotateCamera, HemisphericLight, Vector3, MeshBuilder, Quaternion, AbstractMesh, Nullable, Mesh  } from 'babylonjs';
+import { Engine, Scene, ArcRotateCamera, HemisphericLight, Vector3, MeshBuilder, Quaternion, AbstractMesh, Nullable, Mesh, TransformNode, CylinderDirectedParticleEmitter  } from 'babylonjs';
 import 'babylonjs-loaders';
+import TWEEN from '@tweenjs/tween.js';
 
 const canvas = document.getElementById("canvas");
 if (!(canvas instanceof HTMLCanvasElement)) throw new Error("Couldn't find a canvas. Aborting the demo")
 
 const engine = new Engine(canvas, true, {});
 const scene = new Scene(engine);
+var transformNode = new TransformNode("root");
+
+var tween = new TWEEN.Tween({x: 0, y: 0, z: 0});
+var plane: Mesh;
+var icosphere: Mesh;
+var cylinder: Mesh;
 var currentMesh: Nullable<AbstractMesh>;
+var currentMeshName: string;
 var cubeWidth = 1;
 var cubeHeight = 1;
 var cubeDepth = 1;
@@ -14,7 +22,6 @@ var cylinderHeight = 2;
 var cylinderDiameter = 1;
 var sphereRadius = 1;
 var sphereSubDivisions = 4;
-var newIcosphere: Mesh;
 
 var modal = document.querySelector(".modal");
 var closeButton = document.querySelector(".close-button");
@@ -78,6 +85,20 @@ function stringJoin(s: string, r: Array<any>) {
 	return s
 }
 
+function applyBouncing(node: TransformNode, amplitude: number, duration: number) {
+    tween = new TWEEN.Tween({x: 0, y: amplitude, z: 0}).to({x: 0, y: 0, z: 0}, duration).easing(TWEEN.Easing.Bounce.Out).repeat(100);
+		
+    tween.onUpdate(function (object: { x: number; y: number; z: number; }, elapsed: number) {
+		if (node) {
+			node.position.x = object.x;
+			node.position.y = object.y;
+			node.position.z = object.z;
+		}
+	})
+
+	tween.start();
+}
+
 function prepareScene() {
 	// Camera
 	const camera = new ArcRotateCamera("camera", Math.PI / 2, Math.PI / 2.5, 4, new Vector3(0, 0, 0), scene);
@@ -87,37 +108,41 @@ function prepareScene() {
 	new HemisphericLight("light", new Vector3(0.5, 1, 0.8).normalize(), scene);
 
 	// Objects
-	const plane = MeshBuilder.CreateBox("Plane", {}, scene);
+	plane = MeshBuilder.CreateBox("Plane", {}, scene);
 	plane.rotationQuaternion = Quaternion.FromEulerAngles(0, Math.PI, 0);
 
-	const icosphere = MeshBuilder.CreateIcoSphere("IcoSphere", {}, scene);
+	icosphere = MeshBuilder.CreateIcoSphere("IcoSphere", {}, scene);
 	icosphere.position.set(-2, 0, 0);
 
-	const cylinder = MeshBuilder.CreateCylinder("Cylinder", {}, scene);
+	cylinder = MeshBuilder.CreateCylinder("Cylinder", {}, scene);
 	cylinder.position.set(2, 0, 0);
+
+	applyBouncing(transformNode, 10, 2000);
 
 	scene.onPointerPick = function () {
 		// We try to pick an object
 		var pickResult = scene.pick(scene.pointerX, scene.pointerY);
 		if (pickResult?.hit) {
-			currentMesh = pickResult.pickedMesh;
-			console.log(currentMesh?.id);
+			if (currentMesh)
+				currentMesh.parent = null;
+
+			currentMeshName = pickResult.pickedMesh?.name || '';
 			toggleModal();
 			isModal = true;
 			var modalContent = document.getElementById("modal-iframe");
 			if (modalContent) {
-				switch(currentMesh?.id) {
+				switch(currentMeshName) {
 					case "Plane":
 						modalContent.innerHTML = stringJoin(meshContent.Plane, [cubeWidth, cubeWidth, cubeHeight, cubeHeight, cubeDepth, cubeDepth]);
-						return;
+						break;
 					case "IcoSphere":
 						modalContent.innerHTML = stringJoin(meshContent.IcoSphere, [sphereRadius, sphereRadius, sphereSubDivisions, sphereSubDivisions]);
-						return;
+						break;
 					case "Cylinder":
 						modalContent.innerHTML = stringJoin(meshContent.Cylinder, [cylinderHeight, cylinderHeight, cylinderDiameter, cylinderDiameter]);
-						return;
+						break;
 					default:
-						return;
+						break;
 				}
 			}
 		}
@@ -127,26 +152,40 @@ function prepareScene() {
 prepareScene();
 
 engine.runRenderLoop(() => {
+	tween.update();
+
 	if (isModal) {
-		if (currentMesh?.id === "Plane") {
+		if (currentMeshName === "Plane") {
 			cubeWidth = Number((document.getElementById("width") as HTMLInputElement)?.value) || cubeWidth;
 			cubeHeight = Number((document.getElementById("height") as HTMLInputElement)?.value) || cubeHeight;
 			cubeDepth = Number((document.getElementById("depth") as HTMLInputElement)?.value) || cubeDepth;
-			currentMesh.scaling.y = cubeHeight / 1;
-			currentMesh.scaling.x = cubeWidth / 1;
-			currentMesh.scaling.z = cubeDepth / 1;
-		} else if (currentMesh?.id === "IcoSphere") {
+			if (plane)
+				scene.removeMesh(plane);
+
+			plane = MeshBuilder.CreateBox("Plane", {width: cubeWidth, height: cubeHeight, depth: cubeDepth}, scene);
+			plane.rotationQuaternion = Quaternion.FromEulerAngles(0, Math.PI, 0);
+			plane.parent = transformNode;
+			currentMesh = plane;
+		} else if (currentMeshName === "IcoSphere") {
 			sphereRadius = Number((document.getElementById("radius") as HTMLInputElement)?.value) || sphereRadius;
 			sphereSubDivisions = Number((document.getElementById("subDivisions") as HTMLInputElement)?.value) || sphereSubDivisions;
-			scene.removeMesh(newIcosphere || currentMesh);
-			newIcosphere = MeshBuilder.CreateIcoSphere("IcoSphere", {radius: sphereRadius, subdivisions: sphereSubDivisions}, scene);
-			newIcosphere.position.set(-2, 0, 0);
-		} else if (currentMesh?.id === "Cylinder") {
+			if (icosphere)
+				scene.removeMesh(icosphere);
+
+			icosphere = MeshBuilder.CreateIcoSphere("IcoSphere", {radius: sphereRadius, subdivisions: sphereSubDivisions}, scene);
+			icosphere.position.set(-2, 0, 0);
+			icosphere.parent = transformNode;
+			currentMesh = icosphere;
+		} else if (currentMeshName === "Cylinder") {
 			cylinderHeight = Number((document.getElementById("height") as HTMLInputElement)?.value) || cylinderHeight;
 			cylinderDiameter = Number((document.getElementById("diameter") as HTMLInputElement)?.value) || cylinderDiameter;
-			currentMesh.scaling.y = cylinderHeight / 2;
-			currentMesh.scaling.x = cylinderDiameter / 1;
-			currentMesh.scaling.z = cylinderDiameter / 1;
+			if (cylinder)
+				scene.removeMesh(cylinder);
+
+			cylinder = MeshBuilder.CreateCylinder("Cylinder", {}, scene);
+			cylinder.position.set(2, 0, 0);
+			cylinder.parent = transformNode;
+			currentMesh = cylinder;
 		}
 	}
 

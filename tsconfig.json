@@ -8,6 +8,7 @@
 		"types": ["babylonjs"],
 		"forceConsistentCasingInFileNames": true,
 		"noImplicitReturns": true,
+		"moduleResolution":"Node",
 		"strict": true,
 	},
 	"include": ["index.ts"],
